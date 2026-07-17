@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guess the Number</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e0e0e0;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 40px 36px;
+      width: 420px;
+      max-width: 95vw;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      background: linear-gradient(90deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      margin-bottom: 28px;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Buttons */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: linear-gradient(135deg, #0f766e, #0891b2);
+      color: #fff;
+    }
+    .btn-ghost {
+      background: rgba(255,255,255,0.08);
+      color: #cbd5e1;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .btn-danger {
+      background: rgba(239,68,68,0.18);
+      color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.3);
+    }
+    .btn-sm { padding: 8px 14px; font-size: 0.85rem; width: auto; display: inline-block; margin: 4px; }
+
+    /* Inputs */
+    .input-row { display: flex; gap: 10px; margin: 10px 0; }
+    .input-row label { width: 50px; line-height: 44px; font-weight: 600; color: #94a3b8; text-align: left; }
+    input[type="number"], input[type="text"] {
+      flex: 1;
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: #7c3aed; }
+
+    /* Guess input row */
+    .guess-row { display: flex; gap: 8px; margin: 16px 0; }
+    .guess-row input { flex: 1; }
+    .guess-row button { padding: 11px 20px; width: auto; margin: 0; }
+
+    /* Hint / message */
+    .hint {
+      font-size: 1.1rem;
+      font-weight: 600;
+      min-height: 28px;
+      margin: 10px 0;
+      transition: color 0.3s;
+    }
+    .hint.low  { color: #60a5fa; }
+    .hint.high { color: #f87171; }
+    .hint.win  { color: #34d399; }
+
+    .range-label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .count-label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    /* Level buttons */
+    .level-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 18px;
+      margin: 8px 0;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.1s;
+    }
+    .level-btn:active { transform: scale(0.97); }
+    .level-1 { background: linear-gradient(135deg, #059669, #0891b2); color: #fff; }
+    .level-2 { background: linear-gradient(135deg, #d97706, #b45309); color: #fff; }
+    .level-3 { background: linear-gradient(135deg, #dc2626, #7c3aed); color: #fff; }
+    .level-badge { background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 20px; font-size: 0.78rem; }
+
+    /* Win screen */
+    .trophy { font-size: 3.5rem; margin-bottom: 8px; }
+    .win-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+    .win-sub { font-size: 0.9rem; color: #94a3b8; margin-bottom: 20px; }
+    .win-buttons { display: flex; gap: 8px; }
+    .win-buttons .btn { margin: 0; }
+
+    /* Scores table */
+    .scores { margin: 16px 0; }
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 7px 12px;
+      border-radius: 7px;
+      background: rgba(255,255,255,0.05);
+      margin: 5px 0;
+      font-size: 0.9rem;
+    }
+    .score-val { font-weight: 700; color: #a78bfa; }
+
+    /* Error */
+    .error-msg { color: #f87171; font-size: 0.85rem; min-height: 20px; margin: 4px 0; }
+
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 18px 0; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>🔢 Guess the Number</h1>
+  <p class="subtitle">Can you crack the secret number?</p>
+
+  <!-- SCREEN 1: Mode selection -->
+  <div id="screen-mode" class="screen active">
+    <button class="btn btn-primary" onclick="goMode('casual')">🎮 Casual — Set your own range</button>
+    <button class="btn btn-secondary" onclick="goMode('competitive')">🏆 Competitive — Beat your record</button>
+    <hr class="divider" />
+    <div class="scores" id="best-scores"></div>
+    <button class="btn btn-danger btn-sm" onclick="clearScores()">🗑 Clear Records</button>
+  </div>
+
+  <!-- SCREEN 1b: Casual setup -->
+  <div id="screen-casual" class="screen">
+    <div class="input-row">
+      <label>Min</label>
+      <input type="number" id="casual-min" value="1" min="0" />
+    </div>
+    <div class="input-row">
+      <label>Max</label>
+      <input type="number" id="casual-max" value="100" min="1" />
+    </div>
+    <div class="error-msg" id="casual-err"></div>
+    <button class="btn btn-primary" onclick="startCasual()">Start Game</button>
+    <button class="btn btn-ghost" onclick="show('screen-mode')">← Back</button>
+  </div>
+
+  <!-- SCREEN 1c: Competitive level select -->
+  <div id="screen-levels" class="screen">
+    <button class="level-btn level-1" onclick="startCompetitive(100)">
+      <span>⭐ Level 1</span><span class="level-badge">1 – 100</span>
+    </button>
+    <button class="level-btn level-2" onclick="startCompetitive(1000)">
+      <span>⭐⭐ Level 2</span><span class="level-badge">1 – 1 000</span>
+    </button>
+    <button class="level-btn level-3" onclick="startCompetitive(10000)">
+      <span>⭐⭐⭐ Level 3</span><span class="level-badge">1 – 10 000</span>
+    </button>
+    <button class="btn btn-ghost" style="margin-top:12px" onclick="show('screen-mode')">← Back</button>
+  </div>
+
+  <!-- SCREEN 2: Game -->
+  <div id="screen-game" class="screen">
+    <div class="range-label" id="range-label"></div>
+    <div class="guess-row">
+      <input type="number" id="guess-input" placeholder="Your guess…" onkeydown="if(event.key==='Enter')submitGuess()" />
+      <button class="btn btn-primary" onclick="submitGuess()">Guess!</button>
+    </div>
+    <div class="error-msg" id="guess-err"></div>
+    <div class="hint" id="hint"></div>
+    <div class="count-label" id="count-label"></div>
+  </div>
+
+  <!-- SCREEN 3: Win -->
+  <div id="screen-win" class="screen">
+    <div class="trophy" id="win-trophy">🎉</div>
+    <div class="win-title" id="win-title">You got it!</div>
+    <div class="win-sub" id="win-sub"></div>
+    <div class="win-buttons">
+      <button class="btn btn-primary" id="btn-again" onclick="">Play Again</button>
+      <button class="btn btn-ghost" onclick="show('screen-mode'); loadScores()">Main Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentMode = 'casual';
+  let currentMax = 0;
+
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function goMode(mode) {
+    if (mode === 'casual') show('screen-casual');
+    else show('screen-levels');
+  }
+
+  async function loadScores() {
+    const res = await fetch('/api/best_scores');
+    const data = await res.json();
+    const el = document.getElementById('best-scores');
+    const names = { 100: 'Level 1 (1–100)', 1000: 'Level 2 (1–1 000)', 10000: 'Level 3 (1–10 000)' };
+    let html = '';
+    for (const [k, label] of Object.entries(names)) {
+      const v = data[k];
+      html += `<div class="score-row"><span>${label}</span><span class="score-val">${v !== null ? v + ' guesses' : '—'}</span></div>`;
+    }
+    el.innerHTML = html;
+  }
+
+  async function clearScores() {
+    await fetch('/api/clear_scores', { method: 'POST' });
+    loadScores();
+  }
+
+  async function startGame(min, max, mode, difficulty) {
+    const res = await fetch('/api/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ min, max, mode }),
+    });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    currentMode = mode;
+    currentMax = difficulty;
+    document.getElementById('range-label').textContent = `Guess a number between ${min} and ${max}`;
+    document.getElementById('hint').textContent = '';
+    document.getElementById('hint').className = 'hint';
+    document.getElementById('count-label').textContent = '';
+    document.getElementById('guess-input').value = '';
+    document.getElementById('guess-err').textContent = '';
+    show('screen-game');
+    document.getElementById('guess-input').focus();
+  }
+
+  function startCasual() {
+    const min = parseInt(document.getElementById('casual-min').value);
+    const max = parseInt(document.getElementById('casual-max').value);
+    const err = document.getElementById('casual-err');
+    if (isNaN(min) || isNaN(max) || min < 0) { err.textContent = 'Enter valid positive numbers.'; return; }
+    if (max <= min) { err.textContent = 'Max must be greater than Min.'; return; }
+    err.textContent = '';
+    startGame(min, max, 'casual', 0);
+  }
+
+  function startCompetitive(max) {
+    startGame(1, max, 'competitive', max);
+  }
+
+  async function submitGuess() {
+    const input = document.getElementById('guess-input');
+    const errEl = document.getElementById('guess-err');
+    const val = input.value.trim();
+    if (!val) { errEl.textContent = 'Enter a number first.'; return; }
+
+    const res = await fetch('/api/guess', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guess: val }),
+    });
+    const data = await res.json();
+
+    if (data.error) { errEl.textContent = data.error; return; }
+    errEl.textContent = '';
+    input.value = '';
+
+    const hintEl = document.getElementById('hint');
+    const countEl = document.getElementById('count-label');
+
+    if (data.result === 'win') {
+      const trophy = data.new_record ? '🏆' : '🎉';
+      const title = data.new_record ? 'NEW RECORD!' : 'You got it!';
+      let sub = `You guessed it in ${data.count} ${data.count === 1 ? 'try' : 'tries'}.`;
+      if (!data.new_record && data.best) sub += ` Best: ${data.best} guesses.`;
+
+      document.getElementById('win-trophy').textContent = trophy;
+      document.getElementById('win-title').textContent = title;
+      document.getElementById('win-sub').textContent = sub;
+
+      // Set "Play Again" behavior
+      const btn = document.getElementById('btn-again');
+      if (currentMode === 'competitive') {
+        btn.onclick = () => startCompetitive(currentMax);
+      } else {
+        btn.onclick = () => show('screen-casual');
+      }
+      show('screen-win');
+    } else {
+      hintEl.textContent = data.hint;
+      hintEl.className = 'hint ' + (data.hint.includes('low') ? 'low' : 'high');
+      document.getElementById('range-label').textContent = `Guess a number between ${data.min} and ${data.max}`;
+      countEl.textContent = `Attempts: ${data.count}`;
+      input.focus();
+    }
+  }
+
+  // Init
+  loadScores();
+</script>
+</body>
+</html>
