@@ -165,6 +165,18 @@
     }
     .score-val { font-weight: 700; color: #a78bfa; }
 
+    /* Watermark */
+    .watermark {
+      position: fixed;
+      bottom: 14px;
+      left: 18px;
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.35);
+      font-family: monospace;
+      pointer-events: none;
+      user-select: none;
+    }
+
     /* Error */
     .error-msg { color: #f87171; font-size: 0.85rem; min-height: 20px; margin: 4px 0; }
 
@@ -354,5 +366,6 @@
   // Init
   loadScores();
 </script>
+  <div class="watermark">[eric10074]</div>
 </body>
 </html>
