@@ -230,7 +230,7 @@
   <div id="screen-game" class="screen">
     <div class="range-label" id="range-label"></div>
     <div class="guess-row">
-      <input type="number" id="guess-input" placeholder="Your guess…" onkeydown="if(event.key==='Enter')submitGuess()" />
+      <input type="text" id="guess-input" inputmode="numeric" autocomplete="off" placeholder="Your guess…" onkeydown="if(event.key==='Enter')submitGuess()" />
       <button class="btn btn-primary" onclick="submitGuess()">Guess!</button>
     </div>
     <div class="error-msg" id="guess-err"></div>
@@ -336,7 +336,11 @@
     const hintEl = document.getElementById('hint');
     const countEl = document.getElementById('count-label');
 
-    if (data.result === 'win') {
+    if (data.result === 'cheat') {
+      countEl.textContent = `Attempts: ${data.count}`;
+      alert(`Cheat code accepted! The correct answer is ${data.answer}.`);
+      input.focus();
+    } else if (data.result === 'win') {
       const trophy = data.new_record ? '🏆' : '🎉';
       const title = data.new_record ? 'NEW RECORD!' : 'You got it!';
       let sub = `You guessed it in ${data.count} ${data.count === 1 ? 'try' : 'tries'}.`;

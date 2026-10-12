@@ -7,6 +7,7 @@ app.secret_key = os.environ.get("SESSION_SECRET", "guess-number-secret")
 
 BEST_SCORE_DIR = "scores"
 os.makedirs(BEST_SCORE_DIR, exist_ok=True)
+CHEAT_CODE = "112358132134558914423337761098715972584418167651094617711"
 
 def load_best(max_range):
     path = os.path.join(BEST_SCORE_DIR, f"best_{max_range}.txt")
@@ -45,20 +46,30 @@ def start():
 
 @app.route("/api/guess", methods=["POST"])
 def guess():
-    data = request.json
+    data = request.get_json(silent=True) or {}
+    submitted_guess = data.get("guess")
+
+    num = session.get("num")
+    if num is None:
+        return jsonify({"error": "No game in progress"}), 400
+
+    # Check the exact string before converting it or updating the attempt count.
+    if str(submitted_guess).strip() == CHEAT_CODE:
+        return jsonify({
+            "result": "cheat",
+            "answer": num,
+            "count": session.get("count", 0),
+        })
+
     try:
-        a = int(data.get("guess"))
+        a = int(submitted_guess)
     except (TypeError, ValueError):
         return jsonify({"error": "Enter a valid number"}), 400
 
-    num = session.get("num")
     cur_min = session.get("min")
     cur_max = session.get("max")
     count = session.get("count", 0)
     difficulty = session.get("difficulty", 0)
-
-    if num is None:
-        return jsonify({"error": "No game in progress"}), 400
 
     if a < cur_min or a > cur_max:
         return jsonify({"error": f"Out of range! Guess between {cur_min} and {cur_max}"}), 400
