@@ -107,13 +107,6 @@ def guess():
         "count": count,
     })
 
-@app.route("/api/best_scores", methods=["GET"])
-def best_scores():
-    scores = {}
-    for level in [100, 1000, 10000]:
-        scores[level] = load_best(level)
-    return jsonify(scores)
-
 @app.route("/api/clear_scores", methods=["POST"])
 def clear_scores():
     for level in [100, 1000, 10000]:

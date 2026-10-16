@@ -152,19 +152,6 @@
     .win-buttons { display: flex; gap: 8px; }
     .win-buttons .btn { margin: 0; }
 
-    /* Scores table */
-    .scores { margin: 16px 0; }
-    .score-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 7px 12px;
-      border-radius: 7px;
-      background: rgba(255,255,255,0.05);
-      margin: 5px 0;
-      font-size: 0.9rem;
-    }
-    .score-val { font-weight: 700; color: #a78bfa; }
-
     /* Level 1 leaderboard */
     .leaderboard-section { margin: 20px 0 14px; text-align: left; }
     .leaderboard-heading {
@@ -240,8 +227,6 @@
     <button class="btn btn-primary" onclick="goMode('casual')">🎮 Casual — Set your own range</button>
     <button class="btn btn-secondary" onclick="goMode('competitive')">🏆 Competitive — Beat your record</button>
     <hr class="divider" />
-    <div class="scores" id="best-scores"></div>
-    <hr class="divider" />
     <section class="leaderboard-section" aria-labelledby="leaderboard-title">
       <div class="leaderboard-heading">
         <h2 id="leaderboard-title">Level 1 Leaderboard</h2>
@@ -250,7 +235,8 @@
       <p class="leaderboard-status" id="leaderboard-status" aria-live="polite">Loading scores…</p>
       <ol class="leaderboard-list" id="leaderboard-list" aria-label="Top 10 Level 1 scores" hidden></ol>
     </section>
-    <button class="btn btn-danger btn-sm" onclick="clearScores()">🗑 Clear Records</button>
+    <p class="leaderboard-status" id="records-clear-status" aria-live="polite"></p>
+    <button class="btn btn-danger btn-sm" onclick="clearScores()">🗑 Clear Personal Records</button>
   </div>
 
   <!-- SCREEN 1b: Casual setup -->
@@ -307,7 +293,7 @@
     <p class="score-save-status" id="score-save-status" aria-live="polite" hidden></p>
     <div class="win-buttons">
       <button class="btn btn-primary" id="btn-again" onclick="">Play Again</button>
-      <button class="btn btn-ghost" onclick="show('screen-mode'); loadScores()">Main Menu</button>
+      <button class="btn btn-ghost" onclick="show('screen-mode'); loadLeaderboard()">Main Menu</button>
     </div>
   </div>
 </div>
@@ -326,19 +312,6 @@
   function goMode(mode) {
     if (mode === 'casual') show('screen-casual');
     else show('screen-levels');
-  }
-
-  async function loadScores() {
-    const res = await fetch('/api/best_scores');
-    const data = await res.json();
-    const el = document.getElementById('best-scores');
-    const names = { 100: 'Level 1 (1–100)', 1000: 'Level 2 (1–1 000)', 10000: 'Level 3 (1–10 000)' };
-    let html = '';
-    for (const [k, label] of Object.entries(names)) {
-      const v = data[k];
-      html += `<div class="score-row"><span>${label}</span><span class="score-val">${v !== null ? v + ' guesses' : '—'}</span></div>`;
-    }
-    el.innerHTML = html;
   }
 
   async function loadLeaderboard() {
@@ -399,8 +372,15 @@
   }
 
   async function clearScores() {
-    await fetch('/api/clear_scores', { method: 'POST' });
-    loadScores();
+    const status = document.getElementById('records-clear-status');
+    status.textContent = '';
+    try {
+      const response = await fetch('/api/clear_scores', { method: 'POST' });
+      if (!response.ok) throw new Error('Could not clear personal records');
+      status.textContent = 'Personal records cleared. Leaderboard scores are unchanged.';
+    } catch (error) {
+      status.textContent = 'Could not clear personal records.';
+    }
   }
 
   async function startGame(min, max, mode, difficulty) {
@@ -529,7 +509,6 @@
   }
 
   // Init
-  loadScores();
   loadLeaderboard();
 </script>
   <div class="watermark">[eric10074]</div>
