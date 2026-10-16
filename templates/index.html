@@ -203,8 +203,14 @@
     }
     .leaderboard-rank { color: #94a3b8; font-size: 0.75rem; }
     .leaderboard-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .leaderboard-score { color: #a78bfa; font-weight: 700; white-space: nowrap; }
+    .leaderboard-score { color: #a78bfa; font-weight: 700; text-align: right; white-space: nowrap; }
     .leaderboard-status { color: #94a3b8; font-size: 0.82rem; text-align: center; padding: 10px 4px; }
+    .leaderboard-time { display: block; color: #94a3b8; font-size: 0.7rem; font-weight: 400; }
+
+    .nickname-field { margin: 4px 0 10px; text-align: left; }
+    .nickname-field label { display: block; margin-bottom: 6px; color: #cbd5e1; font-size: 0.85rem; }
+    .nickname-field input { width: 100%; }
+    .score-save-status { color: #a5b4fc; font-size: 0.82rem; margin: 0 0 14px; }
 
     /* Watermark */
     .watermark {
@@ -264,6 +270,11 @@
 
   <!-- SCREEN 1c: Competitive level select -->
   <div id="screen-levels" class="screen">
+    <div class="nickname-field">
+      <label for="competitive-username">Leaderboard nickname</label>
+      <input type="text" id="competitive-username" maxlength="80" autocomplete="nickname" placeholder="Enter your nickname" />
+    </div>
+    <div class="error-msg" id="competitive-err"></div>
     <button class="level-btn level-1" onclick="startCompetitive(100)">
       <span>⭐ Level 1</span><span class="level-badge">1 – 100</span>
     </button>
@@ -293,6 +304,7 @@
     <div class="trophy" id="win-trophy">🎉</div>
     <div class="win-title" id="win-title">You got it!</div>
     <div class="win-sub" id="win-sub"></div>
+    <p class="score-save-status" id="score-save-status" aria-live="polite" hidden></p>
     <div class="win-buttons">
       <button class="btn btn-primary" id="btn-again" onclick="">Play Again</button>
       <button class="btn btn-ghost" onclick="show('screen-mode'); loadScores()">Main Menu</button>
@@ -303,6 +315,8 @@
 <script>
   let currentMode = 'casual';
   let currentMax = 0;
+  let currentUsername = '';
+  let gameStartedAt = null;
 
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -346,7 +360,7 @@
         return;
       }
 
-      scores.slice(0, 10).forEach((score, index) => {
+      scores.slice(0, 10).forEach((entry, index) => {
         const row = document.createElement('li');
         row.className = 'leaderboard-row';
 
@@ -356,13 +370,22 @@
 
         const name = document.createElement('span');
         name.className = 'leaderboard-name';
-        name.textContent = typeof score.name === 'string' && score.name.trim()
-          ? score.name
+        name.textContent = typeof entry.username === 'string' && entry.username.trim()
+          ? entry.username
           : 'Anonymous';
 
         const value = document.createElement('span');
         value.className = 'leaderboard-score';
-        value.textContent = `${score.score} ${score.score === 1 ? 'guess' : 'guesses'}`;
+        const attempts = Number(entry.attempts);
+        value.append(document.createTextNode(
+          `${attempts} ${attempts === 1 ? 'guess' : 'guesses'}`
+        ));
+        const time = document.createElement('small');
+        time.className = 'leaderboard-time';
+        time.textContent = entry.time_taken !== null && Number.isFinite(Number(entry.time_taken))
+          ? `${Number(entry.time_taken).toFixed(1)}s`
+          : 'Time unavailable';
+        value.append(time);
 
         row.append(rank, name, value);
         list.append(row);
@@ -390,6 +413,7 @@
     if (data.error) { alert(data.error); return; }
     currentMode = mode;
     currentMax = difficulty;
+    gameStartedAt = mode === 'competitive' ? performance.now() : null;
     document.getElementById('range-label').textContent = `Guess a number between ${min} and ${max}`;
     document.getElementById('hint').textContent = '';
     document.getElementById('hint').className = 'hint';
@@ -411,7 +435,41 @@
   }
 
   function startCompetitive(max) {
+    const usernameInput = document.getElementById('competitive-username');
+    const error = document.getElementById('competitive-err');
+    currentUsername = usernameInput.value.trim();
+    if (!currentUsername) {
+      error.textContent = 'Enter a nickname to appear on the leaderboard.';
+      usernameInput.focus();
+      return;
+    }
+    error.textContent = '';
     startGame(1, max, 'competitive', max);
+  }
+
+  async function saveCompetitiveScore(attempts) {
+    const status = document.getElementById('score-save-status');
+    const timeTaken = Math.max(0, (performance.now() - gameStartedAt) / 1000);
+    status.hidden = false;
+    status.textContent = 'Saving your score…';
+
+    try {
+      const response = await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: currentUsername,
+          level: currentMax,
+          attempts,
+          time_taken: timeTaken,
+        }),
+      });
+      if (!response.ok) throw new Error('Score could not be saved');
+      status.textContent = 'Your score was added to the leaderboard.';
+      loadLeaderboard();
+    } catch (error) {
+      status.textContent = 'Your win was recorded, but the leaderboard could not be updated.';
+    }
   }
 
   async function submitGuess() {
@@ -447,6 +505,11 @@
       document.getElementById('win-trophy').textContent = trophy;
       document.getElementById('win-title').textContent = title;
       document.getElementById('win-sub').textContent = sub;
+      const scoreSaveStatus = document.getElementById('score-save-status');
+      scoreSaveStatus.hidden = currentMode !== 'competitive';
+      if (currentMode === 'competitive') {
+        saveCompetitiveScore(data.count);
+      }
 
       // Set "Play Again" behavior
       const btn = document.getElementById('btn-again');
