@@ -23,7 +23,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python app.py"
+args = "python main.py"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -35,4 +35,4 @@ externalPort = 80
 
 [deployment]
 deploymentTarget = "cloudrun"
-run = ["gunicorn", "--bind=0.0.0.0:5000", "--reuse-port", "app:app"]
+run = ["gunicorn", "--bind=0.0.0.0:5000", "--reuse-port", "main:app"]
