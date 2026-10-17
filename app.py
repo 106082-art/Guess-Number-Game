@@ -157,6 +157,7 @@ def guess():
     })
 
 @app.route("/api/best_scores", methods=["GET"])
+@app.route("/api/leaderboard", methods=["GET"])
 def best_scores():
     scores = {}
     for level in [100, 1000, 10000]:
