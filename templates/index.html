@@ -470,42 +470,22 @@
   }
 
   async function saveCompetitiveScore(attempts) {
-      const status = document.getElementById('score-save-status');
-      const timeTaken = Math.max(0, (performance.now() - gameStartedAt) / 1000);
-      if (status) {
-          status.hidden = false;
-          status.textContent = 'Saving your score…';
-      }
+    const status = document.getElementById('score-save-status');
+    const timeTaken = Math.max(0, (performance.now() - gameStartedAt) / 1000);
+    status.hidden = false;
+    status.textContent = 'Saving your score…';
 
-      // 抓取暱稱輸入框，若沒填則預設為 eric10074
-      const usernameInput = document.getElementById('competitive-username') || document.querySelector('input[type="text"]');
-      const nickname = (usernameInput && usernameInput.value.trim() !== '') ? usernameInput.value.trim() : 'eric10074';
-
-      try {
-          const response = await fetch('/api/score', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  nickname: nickname,
-                  level: currentLevel || 100,
-                  attempts: attempts,
-                  time_taken: timeTaken
-              })
-          });
-
-          if (response.ok) {
-              if (status) status.textContent = 'Score saved!';
-              if (typeof loadLeaderboard === 'function') {
-                  loadLeaderboard(currentLevel || 100);
-              }
-          } else {
-              if (status) status.textContent = 'Failed to save score.';
-          }
-      } catch (err) {
-          console.error('Failed to save score:', err);
-          if (status) status.textContent = 'Error saving score.';
-      }
-  }
+    try {
+      const response = await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: currentUsername,
+          level: currentMax,
+          attempts,
+          time_taken: timeTaken,
+        }),
+      });
       if (!response.ok) throw new Error('Score could not be saved');
       status.textContent = 'Your score was added to the leaderboard.';
       await loadLeaderboard(currentMax);
