@@ -21,6 +21,7 @@ CHEAT_CODE = "112358132134558914423337761098715972584418167651094617711"
 SUPPORTED_LEVELS = {100, 1000, 10000}
 MAX_GAME_NUMBER = 2_147_483_647
 MAX_USERNAME_LENGTH = 80
+LEADERBOARD_LIMIT = 50
 
 _schema_lock = threading.Lock()
 _schema_ready = False
@@ -42,7 +43,7 @@ def get_player_id():
 
 @contextmanager
 def db_connection():
-    """Connect to Neon and initialize database tables and indexes."""
+    """連接 Neon，並初始化資料表與索引。"""
     global _schema_ready
 
     database_url = os.environ.get("DATABASE_URL")
@@ -73,7 +74,7 @@ def db_connection():
                         )
                     """)
 
-                    # 全球排行榜仍然獨立保存。
+                    # 全球排行榜獨立保存。
                     conn.execute("""
                         CREATE TABLE IF NOT EXISTS leaderboard (
                             id BIGSERIAL PRIMARY KEY,
@@ -127,6 +128,28 @@ def db_connection():
                             id
                         )
                     """)
+
+                    # 若資料庫裡已有超過 50 名的紀錄，只保留前 50 名。
+                    # 不會影響個人最佳紀錄資料表。
+                    conn.execute("""
+                        DELETE FROM leaderboard
+                        WHERE id IN (
+                            SELECT id
+                            FROM (
+                                SELECT
+                                    id,
+                                    ROW_NUMBER() OVER (
+                                        PARTITION BY level
+                                        ORDER BY
+                                            attempts ASC,
+                                            time_taken ASC,
+                                            created_at ASC,
+                                            id ASC
+                                    ) AS rn
+                                FROM leaderboard
+                            ) AS ranked
+                            WHERE ranked.rn > %s
+                        """, (LEADERBOARD_LIMIT,))
 
                     conn.commit()
                     _schema_ready = True
@@ -221,6 +244,7 @@ def save_best(player_id, level, attempts):
 
 
 def get_leaderboard(level):
+    """取得指定難度的全球排行榜前 50 名。"""
     with db_connection() as conn:
         rows = conn.execute(
             """
@@ -232,9 +256,9 @@ def get_leaderboard(level):
                 time_taken ASC,
                 created_at ASC,
                 id ASC
-            LIMIT 10
+            LIMIT %s
             """,
-            (level,),
+            (level, LEADERBOARD_LIMIT),
         ).fetchall()
 
     return [
@@ -583,7 +607,8 @@ def submit_score():
                     (attempts, time_taken, existing["id"]),
                 )
 
-            # 全球排行榜仍然只保留每個難度的前 10 名。
+            # 每個難度只保留全球排行榜前 50 名。
+            # 第 51 名以後的成績會被刪除。
             conn.execute(
                 """
                 DELETE FROM leaderboard
@@ -597,10 +622,10 @@ def submit_score():
                           time_taken ASC,
                           created_at ASC,
                           id ASC
-                      LIMIT 10
+                      LIMIT %s
                   )
                 """,
-                (level, level),
+                (level, level, LEADERBOARD_LIMIT),
             )
 
             current = conn.execute(
