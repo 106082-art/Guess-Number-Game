@@ -544,37 +544,13 @@ def submit_score():
 
 @app.route("/api/clear_scores", methods=["POST"])
 def clear_scores():
-    admin_secret = os.environ.get("ADMIN_SECRET")
-
-    if not admin_secret:
-        app.logger.error("ADMIN_SECRET is not configured")
-        return jsonify({
-            "error": "Admin operation is not configured"
-        }), 503
-
-    provided_secret = request.headers.get("X-Admin-Secret", "")
-
-    if not hmac.compare_digest(provided_secret, admin_secret):
-        return jsonify({
-            "error": "Unauthorized"
-        }), 401
-
-    try:
-        with db_connection() as conn:
-            conn.execute("DELETE FROM best_scores")
-            conn.execute("DELETE FROM leaderboard")
-
-        return jsonify({"ok": True})
-
-    except Exception:
-        app.logger.exception("Could not clear scores")
-        return jsonify({
-            "error": "Could not clear scores"
-        }), 503
+    # 個人畫面上的 Clear Records 不應清空全站資料庫。
+    # 停用此路由，避免前端誤呼叫時刪除所有玩家的紀錄。
+    return jsonify({
+        "error": "This endpoint is disabled."
+    }), 410
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
     app.run(host="0.0.0.0", port=port)
-
-
