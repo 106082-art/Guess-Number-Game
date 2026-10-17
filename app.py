@@ -5,8 +5,8 @@ import random
 import threading
 from contextlib import contextmanager
 
-import psycopg2 as psycopg
-from psycopg2.extras import RealDictCursor as dict_row
+import psycopg
+from psycopg.rows import dict_row
 from flask import Flask, render_template, request, jsonify, session
 
 app = Flask(__name__)
