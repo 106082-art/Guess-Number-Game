@@ -506,23 +506,6 @@
           if (status) status.textContent = 'Error saving score.';
       }
   }
-          } else {
-              status.textContent = 'Failed to save score.';
-          }
-      } catch (err) {
-          console.error('Failed to save score:', err);
-          status.textContent = 'Error saving score.';
-      }
-  }
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: currentUsername,
-          level: currentMax,
-          attempts,
-          time_taken: timeTaken,
-        }),
-      });
       if (!response.ok) throw new Error('Score could not be saved');
       status.textContent = 'Your score was added to the leaderboard.';
       await loadLeaderboard(currentMax);
