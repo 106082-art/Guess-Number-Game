@@ -3,6 +3,7 @@ import os
 import math
 import random
 import threading
+import hmac
 from contextlib import contextmanager
 
 import psycopg
@@ -11,7 +12,8 @@ from flask import Flask, render_template, request, jsonify, session
 
 app = Flask(__name__)
 app.secret_key = os.environ.get(
-    "SESSION_SECRET", "guess-number-secret-change-this"
+    "SESSION_SECRET",
+    "guess-number-secret-change-this",
 )
 
 CHEAT_CODE = "112358132134558914423337761098715972584418167651094617711"
@@ -25,7 +27,7 @@ _schema_ready = False
 
 @contextmanager
 def db_connection():
-    """Connect to Neon and ensure the required tables exist."""
+    """Connect to Neon and initialize database tables and indexes."""
     global _schema_ready
 
     database_url = os.environ.get("DATABASE_URL")
@@ -66,6 +68,33 @@ def db_connection():
                         )
                     """)
 
+                    # 同一難度、同名玩家只保留成績最好的一筆。
+                    conn.execute("""
+                        WITH ranked AS (
+                            SELECT
+                                id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY level, LOWER(username)
+                                    ORDER BY
+                                        attempts ASC,
+                                        time_taken ASC,
+                                        created_at ASC,
+                                        id ASC
+                                ) AS rn
+                            FROM leaderboard
+                        )
+                        DELETE FROM leaderboard
+                        USING ranked
+                        WHERE leaderboard.id = ranked.id
+                          AND ranked.rn > 1
+                    """)
+
+                    conn.execute("""
+                        CREATE UNIQUE INDEX IF NOT EXISTS
+                            leaderboard_level_username_unique
+                        ON leaderboard (level, LOWER(username))
+                    """)
+
                     conn.execute("""
                         CREATE INDEX IF NOT EXISTS leaderboard_ranking_idx
                         ON leaderboard (
@@ -86,6 +115,7 @@ def db_connection():
     except Exception:
         conn.rollback()
         raise
+
     finally:
         conn.close()
 
@@ -107,14 +137,21 @@ def load_best(level):
     try:
         with db_connection() as conn:
             row = conn.execute(
-                "SELECT attempts FROM best_scores WHERE level = %s",
+                """
+                SELECT attempts
+                FROM best_scores
+                WHERE level = %s
+                """,
                 (level,),
             ).fetchone()
 
             return row["attempts"] if row else None
 
     except Exception:
-        app.logger.exception("Could not load best score for level %s", level)
+        app.logger.exception(
+            "Could not load best score for level %s",
+            level,
+        )
         return None
 
 
@@ -139,7 +176,11 @@ def get_leaderboard(level):
             SELECT username, attempts, time_taken, created_at
             FROM leaderboard
             WHERE level = %s
-            ORDER BY attempts ASC, time_taken ASC, created_at ASC, id ASC
+            ORDER BY
+                attempts ASC,
+                time_taken ASC,
+                created_at ASC,
+                id ASC
             LIMIT 10
             """,
             (level,),
@@ -171,17 +212,24 @@ def start():
     data = request.get_json(silent=True)
 
     if not isinstance(data, dict):
-        return jsonify({"error": "Request body must be a JSON object"}), 400
+        return jsonify({
+            "error": "Request body must be a JSON object"
+        }), 400
 
     mode = data.get("mode")
+
     if mode not in {"casual", "competitive"}:
-        return jsonify({"error": "mode must be casual or competitive"}), 400
+        return jsonify({
+            "error": "mode must be casual or competitive"
+        }), 400
 
     min_val = parse_integer(data.get("min", 1))
     max_val = parse_integer(data.get("max", data.get("level", 100)))
 
     if min_val is None or max_val is None:
-        return jsonify({"error": "Min and Max must be whole numbers"}), 400
+        return jsonify({
+            "error": "Min and Max must be whole numbers"
+        }), 400
 
     if min_val < 0 or max_val > MAX_GAME_NUMBER:
         return jsonify({
@@ -189,14 +237,18 @@ def start():
         }), 400
 
     if min_val >= max_val:
-        return jsonify({"error": "Max must be greater than Min"}), 400
+        return jsonify({
+            "error": "Max must be greater than Min"
+        }), 400
 
     if mode == "competitive" and (
         min_val != 1 or max_val not in SUPPORTED_LEVELS
     ):
         return jsonify({
-            "error": "Competitive levels must be 100, 1000, or 10000 "
-                     "with a minimum of 1"
+            "error": (
+                "Competitive levels must be 100, 1000, or 10000 "
+                "with a minimum of 1"
+            )
         }), 400
 
     session["num"] = random.randint(min_val, max_val)
@@ -206,7 +258,11 @@ def start():
     session["mode"] = mode
     session["difficulty"] = max_val if mode == "competitive" else 0
 
-    return jsonify({"ok": True, "min": min_val, "max": max_val})
+    return jsonify({
+        "ok": True,
+        "min": min_val,
+        "max": max_val,
+    })
 
 
 @app.route("/api/guess", methods=["POST"])
@@ -214,13 +270,17 @@ def guess():
     data = request.get_json(silent=True)
 
     if not isinstance(data, dict):
-        return jsonify({"error": "Request body must be a JSON object"}), 400
+        return jsonify({
+            "error": "Request body must be a JSON object"
+        }), 400
 
     submitted_guess = data.get("guess")
     num = session.get("num")
 
     if num is None:
-        return jsonify({"error": "No game in progress"}), 400
+        return jsonify({
+            "error": "No game in progress"
+        }), 400
 
     if str(submitted_guess).strip() == CHEAT_CODE:
         return jsonify({
@@ -230,8 +290,11 @@ def guess():
         })
 
     a = parse_integer(submitted_guess)
+
     if a is None:
-        return jsonify({"error": "Enter a valid number"}), 400
+        return jsonify({
+            "error": "Enter a valid number"
+        }), 400
 
     cur_min = session.get("min")
     cur_max = session.get("max")
@@ -240,7 +303,9 @@ def guess():
 
     if a < cur_min or a > cur_max:
         return jsonify({
-            "error": f"Out of range! Guess between {cur_min} and {cur_max}"
+            "error": (
+                f"Out of range! Guess between {cur_min} and {cur_max}"
+            )
         }), 400
 
     count += 1
@@ -255,9 +320,11 @@ def guess():
                 save_best(difficulty, count)
                 new_record = True
                 best = min(best, count) if best is not None else count
+
             except Exception:
                 app.logger.exception(
-                    "Could not save best score for level %s", difficulty
+                    "Could not save best score for level %s",
+                    difficulty,
                 )
 
         return jsonify({
@@ -298,14 +365,18 @@ def leaderboard():
     level = parse_integer(request.args.get("level", "100"))
 
     if level not in SUPPORTED_LEVELS:
-        return jsonify({"error": "Invalid leaderboard level"}), 400
+        return jsonify({
+            "error": "Invalid leaderboard level"
+        }), 400
 
     try:
-        # The frontend expects an array, not a dictionary.
         return jsonify(get_leaderboard(level))
+
     except Exception:
         app.logger.exception("Could not load leaderboard")
-        return jsonify({"error": "Leaderboard is temporarily unavailable"}), 503
+        return jsonify({
+            "error": "Leaderboard is temporarily unavailable"
+        }), 503
 
 
 @app.route("/api/score", methods=["POST"])
@@ -313,79 +384,99 @@ def submit_score():
     data = request.get_json(silent=True)
 
     if not isinstance(data, dict):
-        return jsonify({"error": "Request body must be a JSON object"}), 400
+        return jsonify({
+            "error": "Request body must be a JSON object"
+        }), 400
 
     username = data.get("username")
     level = parse_integer(data.get("level"))
     attempts = parse_integer(data.get("attempts"))
 
     if not isinstance(username, str):
-        return jsonify({"error": "Username is required"}), 400
+        return jsonify({
+            "error": "Username is required"
+        }), 400
 
     username = username.strip()
 
     if not username or len(username) > MAX_USERNAME_LENGTH:
         return jsonify({
-            "error": f"Username must be 1-{MAX_USERNAME_LENGTH} characters"
+            "error": "Invalid username"
         }), 400
 
     if level not in SUPPORTED_LEVELS:
-        return jsonify({"error": "Invalid level"}), 400
+        return jsonify({
+            "error": "Invalid level"
+        }), 400
 
     if attempts is None or attempts < 1:
-        return jsonify({"error": "Attempts must be a positive integer"}), 400
-
-    raw_time = data.get("time_taken")
+        return jsonify({
+            "error": "Invalid attempts"
+        }), 400
 
     try:
-        time_taken = float(raw_time)
+        time_taken = float(data.get("time_taken"))
     except (TypeError, ValueError):
-        return jsonify({"error": "Invalid game time"}), 400
+        return jsonify({
+            "error": "Invalid game time"
+        }), 400
 
     if not math.isfinite(time_taken) or not 0 <= time_taken <= 86400:
-        return jsonify({"error": "Invalid game time"}), 400
+        return jsonify({
+            "error": "Invalid game time"
+        }), 400
 
     try:
         with db_connection() as conn:
-            # Serialize submissions for the same level while ranking/pruning.
+            # 同一難度的排行榜更新依序處理。
             conn.execute(
                 "SELECT pg_advisory_xact_lock(%s)",
                 (level,),
             )
 
-            inserted = conn.execute(
+            existing = conn.execute(
                 """
-                INSERT INTO leaderboard (
-                    level, username, attempts, time_taken
-                )
-                VALUES (%s, %s, %s, %s)
-                RETURNING id
-                """,
-                (level, username, attempts, time_taken),
-            ).fetchone()
-
-            new_id = inserted["id"]
-
-            ranked = conn.execute(
-                """
-                SELECT id,
-                       ROW_NUMBER() OVER (
-                           ORDER BY attempts ASC,
-                                    time_taken ASC,
-                                    created_at ASC,
-                                    id ASC
-                       ) AS rank
+                SELECT id, attempts, time_taken
                 FROM leaderboard
                 WHERE level = %s
-                ORDER BY attempts ASC, time_taken ASC, created_at ASC, id ASC
+                  AND LOWER(username) = LOWER(%s)
                 """,
-                (level,),
-            ).fetchall()
+                (level, username),
+            ).fetchone()
 
-            rank = next(
-                (row["rank"] for row in ranked if row["id"] == new_id),
-                None,
-            )
+            improved = existing is None
+
+            if existing is not None:
+                improved = (
+                    attempts < existing["attempts"]
+                    or (
+                        attempts == existing["attempts"]
+                        and time_taken < existing["time_taken"]
+                    )
+                )
+
+            if improved and existing is None:
+                conn.execute(
+                    """
+                    INSERT INTO leaderboard (
+                        level, username, attempts, time_taken
+                    )
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (level, username, attempts, time_taken),
+                )
+
+            elif improved:
+                conn.execute(
+                    """
+                    UPDATE leaderboard
+                    SET attempts = %s,
+                        time_taken = %s,
+                        created_at = NOW()
+                    WHERE id = %s
+                    """,
+                    (attempts, time_taken, existing["id"]),
+                )
 
             conn.execute(
                 """
@@ -395,29 +486,79 @@ def submit_score():
                       SELECT id
                       FROM leaderboard
                       WHERE level = %s
-                      ORDER BY attempts ASC,
-                               time_taken ASC,
-                               created_at ASC,
-                               id ASC
+                      ORDER BY
+                          attempts ASC,
+                          time_taken ASC,
+                          created_at ASC,
+                          id ASC
                       LIMIT 10
                   )
                 """,
                 (level, level),
             )
 
+            current = conn.execute(
+                """
+                SELECT
+                    ROW_NUMBER() OVER (
+                        ORDER BY
+                            attempts ASC,
+                            time_taken ASC,
+                            created_at ASC,
+                            id ASC
+                    ) AS rank,
+                    LOWER(username) AS normalized_username
+                FROM leaderboard
+                WHERE level = %s
+                ORDER BY
+                    attempts ASC,
+                    time_taken ASC,
+                    created_at ASC,
+                    id ASC
+                """,
+                (level,),
+            ).fetchall()
+
+            rank = next(
+                (
+                    row["rank"]
+                    for row in current
+                    if row["normalized_username"] == username.lower()
+                ),
+                None,
+            )
+
         return jsonify({
             "ok": True,
-            "qualified": rank is not None and rank <= 10,
-            "rank": rank if rank is not None and rank <= 10 else None,
+            "updated": improved,
+            "qualified": rank is not None,
+            "rank": rank,
         }), 201
 
     except Exception:
         app.logger.exception("Could not save leaderboard score")
-        return jsonify({"error": "Could not save score right now"}), 503
+        return jsonify({
+            "error": "Could not save score right now"
+        }), 503
 
 
 @app.route("/api/clear_scores", methods=["POST"])
 def clear_scores():
+    admin_secret = os.environ.get("ADMIN_SECRET")
+
+    if not admin_secret:
+        app.logger.error("ADMIN_SECRET is not configured")
+        return jsonify({
+            "error": "Admin operation is not configured"
+        }), 503
+
+    provided_secret = request.headers.get("X-Admin-Secret", "")
+
+    if not hmac.compare_digest(provided_secret, admin_secret):
+        return jsonify({
+            "error": "Unauthorized"
+        }), 401
+
     try:
         with db_connection() as conn:
             conn.execute("DELETE FROM best_scores")
@@ -427,10 +568,13 @@ def clear_scores():
 
     except Exception:
         app.logger.exception("Could not clear scores")
-        return jsonify({"error": "Could not clear scores"}), 503
+        return jsonify({
+            "error": "Could not clear scores"
+        }), 503
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
     app.run(host="0.0.0.0", port=port)
+
 
