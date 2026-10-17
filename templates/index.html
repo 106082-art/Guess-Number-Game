@@ -470,13 +470,73 @@
   }
 
   async function saveCompetitiveScore(attempts) {
-    const status = document.getElementById('score-save-status');
-    const timeTaken = Math.max(0, (performance.now() - gameStartedAt) / 1000);
-    status.hidden = false;
-    status.textContent = 'Saving your score…';
+      const status = document.getElementById('score-save-status');
+      const timeTaken = Math.max(0, (performance.now() - gameStartedAt) / 1000);
+      if (status) {
+          status.hidden = false;
+          status.textContent = 'Saving your score…';
+      }
 
-    try {
-      const response = await fetch('/api/score', {
+      // 關鍵！這兩行會抓取輸入框的名字，沒填就預設 eric10074
+      const usernameInput = document.getElementById('competitive-username') || document.querySelector('input[type="text"]');
+      const nickname = (usernameInput && usernameInput.value.trim() !== '') ? usernameInput.value.trim() : 'eric10074';
+
+      try {
+          const response = await fetch('/api/score', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  nickname: nickname,
+                  level: currentLevel || 100,
+                  attempts: attempts,
+                  time_taken: timeTaken
+              })
+          });
+
+          if (response.ok) {
+              if (status) status.textContent = 'Score saved!';
+              if (typeof loadLeaderboard === 'function') {
+                  loadLeaderboard(currentLevel || 100);
+              }
+          } else {
+              if (status) status.textContent = 'Failed to save score.';
+          }
+      } catch (err) {
+          console.error('Failed to save score:', err);
+          if (status) status.textContent = 'Error saving score.';
+      }
+  }
+
+      // 1. 強制去拿畫面上的暱稱輸入框
+      const usernameInput = document.getElementById('competitive-username') || document.querySelector('input[type="text"]');
+      const nickname = (usernameInput && usernameInput.value.trim() !== '') ? usernameInput.value.trim() : 'eric10074';
+
+      try {
+          const response = await fetch('/api/score', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  nickname: nickname,
+                  level: currentLevel || 100,
+                  attempts: attempts,
+                  time_taken: timeTaken
+              })
+          });
+
+          if (response.ok) {
+              status.textContent = 'Score saved!';
+              // 2. 成功存完檔後，立刻刷新排行榜顯示新名字
+              if (typeof loadLeaderboard === 'function') {
+                  loadLeaderboard(currentLevel || 100);
+              }
+          } else {
+              status.textContent = 'Failed to save score.';
+          }
+      } catch (err) {
+          console.error('Failed to save score:', err);
+          status.textContent = 'Error saving score.';
+      }
+  }
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
