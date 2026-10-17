@@ -8,6 +8,7 @@ from flask_cors import CORS
 from app import app
 
 CORS(app, resources={r"/*": {"origins": "*"}})
+SUPPORTED_LEVELS = {100, 1000, 10000}
 
 
 class DatabaseNotConfigured(RuntimeError):
@@ -64,6 +65,27 @@ def initialize_database():
                     """
                     ALTER TABLE leaderboard
                     ADD COLUMN IF NOT EXISTS time_taken DOUBLE PRECISION
+                    """
+                )
+                cursor.execute(
+                    """
+                    ALTER TABLE leaderboard
+                    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    """
+                )
+                cursor.execute(
+                    "UPDATE leaderboard SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"
+                )
+                cursor.execute(
+                    """
+                    ALTER TABLE leaderboard
+                    ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP
+                    """
+                )
+                cursor.execute(
+                    """
+                    ALTER TABLE leaderboard
+                    ALTER COLUMN created_at SET NOT NULL
                     """
                 )
                 cursor.execute(
@@ -166,8 +188,8 @@ def submit_score():
         return jsonify({"error": "username must be 80 characters or fewer"}), 400
     if type(attempts) is not int or not 1 <= attempts <= 2_147_483_647:
         return jsonify({"error": "attempts must be a positive integer"}), 400
-    if type(level) is not int or not 1 <= level <= 2_147_483_647:
-        return jsonify({"error": "level must be a positive integer"}), 400
+    if type(level) is not int or level not in SUPPORTED_LEVELS:
+        return jsonify({"error": "level must be 100, 1000, or 10000"}), 400
     if (
         isinstance(time_taken, bool)
         or not isinstance(time_taken, (int, float))
@@ -215,10 +237,10 @@ def get_leaderboard():
     level_value = request.args.get("level")
     try:
         level = int(level_value)
-        if level < 1:
+        if level not in SUPPORTED_LEVELS:
             raise ValueError
     except (TypeError, ValueError):
-        return jsonify({"error": "level must be a positive integer"}), 400
+        return jsonify({"error": "level must be 100, 1000, or 10000"}), 400
 
     try:
         connection = get_db_connection()

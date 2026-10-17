@@ -14,8 +14,9 @@ The existing game UI and its routes are served alongside the leaderboard API.
 
 ## Leaderboard API
 
-- `POST /api/score` — save `{ "username": "Ada", "level": 100, "attempts": 10, "time_taken": 12.4 }`
-- `GET /api/leaderboard?level=100` — return the top ten scores by fewest attempts, then fastest time
+- `POST /api/score` — save a winning score for level `100`, `1000`, or `10000`
+- `GET /api/leaderboard?level=100` — return the top ten for the selected level, ordered by fewest attempts and then fastest time. Supported levels: `100`, `1000`, `10000`.
+- `GET /api/best_scores` — return the local best attempt count for each supported level
 - `GET /ping` — health check (`Server is running`)
 
 The server creates or upgrades the `leaderboard` table on startup. It reads

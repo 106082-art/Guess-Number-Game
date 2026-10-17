@@ -165,7 +165,7 @@
     }
     .score-val { font-weight: 700; color: #a78bfa; }
 
-    /* Level 1 leaderboard */
+    /* Per-level leaderboard */
     .leaderboard-section { margin: 20px 0 14px; text-align: left; }
     .leaderboard-heading {
       display: flex;
@@ -181,8 +181,10 @@
       border: 1px solid rgba(167,139,250,0.22);
       border-radius: 20px;
       padding: 3px 9px;
+      font: inherit;
       font-size: 0.72rem;
       white-space: nowrap;
+      cursor: pointer;
     }
     .leaderboard-list {
       display: grid;
@@ -245,10 +247,14 @@
     <section class="leaderboard-section" aria-labelledby="leaderboard-title">
       <div class="leaderboard-heading">
         <h2 id="leaderboard-title">Level 1 Leaderboard</h2>
-        <span class="leaderboard-level">1–100</span>
+        <select id="leaderboard-level" class="leaderboard-level" aria-label="Choose leaderboard level" onchange="loadLeaderboard(this.value)">
+          <option value="100">1–100</option>
+          <option value="1000">1–1 000</option>
+          <option value="10000">1–10 000</option>
+        </select>
       </div>
       <p class="leaderboard-status" id="leaderboard-status" aria-live="polite">Loading scores…</p>
-      <ol class="leaderboard-list" id="leaderboard-list" aria-label="Top 10 Level 1 scores" hidden></ol>
+      <ol class="leaderboard-list" id="leaderboard-list" aria-label="Top 10 scores" hidden></ol>
     </section>
     <button class="btn btn-danger btn-sm" onclick="clearScores()">🗑 Clear Records</button>
   </div>
@@ -307,7 +313,7 @@
     <p class="score-save-status" id="score-save-status" aria-live="polite" hidden></p>
     <div class="win-buttons">
       <button class="btn btn-primary" id="btn-again" onclick="">Play Again</button>
-      <button class="btn btn-ghost" onclick="show('screen-mode'); loadScores()">Main Menu</button>
+      <button class="btn btn-ghost" onclick="show('screen-mode'); loadScores(); loadLeaderboard()">Main Menu</button>
     </div>
   </div>
 </div>
@@ -341,7 +347,18 @@
     el.innerHTML = html;
   }
 
-  async function loadLeaderboard() {
+  async function loadLeaderboard(level) {
+    const levelSelect = document.getElementById('leaderboard-level');
+    const selectedLevel = Number(level || levelSelect.value || 100);
+    const levelNames = {
+      100: 'Level 1 Leaderboard',
+      1000: 'Level 2 Leaderboard',
+      10000: 'Level 3 Leaderboard',
+    };
+    if (!levelNames[selectedLevel]) return;
+    levelSelect.value = String(selectedLevel);
+    document.getElementById('leaderboard-title').textContent = levelNames[selectedLevel];
+
     const status = document.getElementById('leaderboard-status');
     const list = document.getElementById('leaderboard-list');
     status.hidden = false;
@@ -350,7 +367,7 @@
     list.replaceChildren();
 
     try {
-      const response = await fetch('/api/leaderboard?level=100');
+      const response = await fetch(`/api/leaderboard?level=${selectedLevel}`);
       if (!response.ok) throw new Error('Leaderboard request failed');
 
       const scores = await response.json();
@@ -508,6 +525,7 @@
       const scoreSaveStatus = document.getElementById('score-save-status');
       scoreSaveStatus.hidden = currentMode !== 'competitive';
       if (currentMode === 'competitive') {
+        document.getElementById('leaderboard-level').value = String(currentMax);
         saveCompetitiveScore(data.count);
       }
 
