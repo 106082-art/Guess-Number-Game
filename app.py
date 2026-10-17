@@ -173,3 +173,45 @@ def clear_scores():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+import os, json
+
+@app.route('/api/leaderboard', methods=['GET'])
+def get_leaderboard_data():
+    level = request.args.get('level', type=int, default=100)
+    filepath = os.path.join(BEST_SCORE_DIR, f"best_{level}.txt")
+
+    if not os.path.exists(filepath):
+        return jsonify([]), 200
+
+    try:
+        scores = []
+        with open(filepath, 'r', encoding='utf-8') as f:
+            for line in f:
+                parts = line.strip().split(',')
+                if len(parts) >= 3:
+                    scores.append({
+                        'nickname': parts[0],
+                        'attempts': int(parts[1]),
+                        'time_taken': float(parts[2])
+                    })
+        # 依照猜測次數與花費時間排序
+        scores.sort(key=lambda x: (x['attempts'], x['time_taken']))
+        return jsonify(scores[:10]), 200
+    except Exception:
+        return jsonify([]), 200
+
+@app.route('/api/score', methods=['POST'])
+def save_score_data():
+    data = request.get_json() or {}
+    nickname = data.get('nickname', 'Anonymous')
+    level = data.get('level', 100)
+    attempts = data.get('attempts', 0)
+    time_taken = data.get('time_taken', 0)
+
+    os.makedirs(BEST_SCORE_DIR, exist_ok=True)
+    filepath = os.path.join(BEST_SCORE_DIR, f"best_{level}.txt")
+
+    with open(filepath, 'a', encoding='utf-8') as f:
+        f.write(f"{nickname},{attempts},{time_taken}\n")
+
+    return jsonify({'status': 'success'}), 200
