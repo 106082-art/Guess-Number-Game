@@ -48,7 +48,6 @@
     .screen { display: none; }
     .screen.active { display: block; }
 
-    /* Buttons */
     .btn {
       display: block;
       width: 100%;
@@ -80,11 +79,22 @@
       color: #fca5a5;
       border: 1px solid rgba(239,68,68,0.3);
     }
-    .btn-sm { padding: 8px 14px; font-size: 0.85rem; width: auto; display: inline-block; margin: 4px; }
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      width: auto;
+      display: inline-block;
+      margin: 4px;
+    }
 
-    /* Inputs */
     .input-row { display: flex; gap: 10px; margin: 10px 0; }
-    .input-row label { width: 50px; line-height: 44px; font-weight: 600; color: #94a3b8; text-align: left; }
+    .input-row label {
+      width: 50px;
+      line-height: 44px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-align: left;
+    }
     input[type="number"], input[type="text"] {
       flex: 1;
       padding: 11px 14px;
@@ -98,12 +108,10 @@
     }
     input:focus { border-color: #7c3aed; }
 
-    /* Guess input row */
     .guess-row { display: flex; gap: 8px; margin: 16px 0; }
     .guess-row input { flex: 1; }
     .guess-row button { padding: 11px 20px; width: auto; margin: 0; }
 
-    /* Hint / message */
     .hint {
       font-size: 1.1rem;
       font-weight: 600;
@@ -111,22 +119,20 @@
       margin: 10px 0;
       transition: color 0.3s;
     }
-    .hint.low  { color: #60a5fa; }
+    .hint.low { color: #60a5fa; }
     .hint.high { color: #f87171; }
-    .hint.win  { color: #34d399; }
+    .hint.win { color: #34d399; }
 
     .range-label {
       font-size: 0.85rem;
       color: #94a3b8;
       margin-bottom: 6px;
     }
-
     .count-label {
       font-size: 0.85rem;
       color: #94a3b8;
     }
 
-    /* Level buttons */
     .level-btn {
       display: flex;
       align-items: center;
@@ -144,16 +150,19 @@
     .level-1 { background: linear-gradient(135deg, #059669, #0891b2); color: #fff; }
     .level-2 { background: linear-gradient(135deg, #d97706, #b45309); color: #fff; }
     .level-3 { background: linear-gradient(135deg, #dc2626, #7c3aed); color: #fff; }
-    .level-badge { background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 20px; font-size: 0.78rem; }
+    .level-badge {
+      background: rgba(0,0,0,0.25);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+    }
 
-    /* Win screen */
     .trophy { font-size: 3.5rem; margin-bottom: 8px; }
     .win-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
     .win-sub { font-size: 0.9rem; color: #94a3b8; margin-bottom: 20px; }
     .win-buttons { display: flex; gap: 8px; }
     .win-buttons .btn { margin: 0; }
 
-    /* Scores table */
     .scores { margin: 16px 0; }
     .score-row {
       display: flex;
@@ -166,7 +175,6 @@
     }
     .score-val { font-weight: 700; color: #a78bfa; }
 
-    /* Per-level leaderboard */
     .leaderboard-section { margin: 20px 0 14px; text-align: left; }
     .leaderboard-heading {
       display: flex;
@@ -205,17 +213,44 @@
       font-size: 0.82rem;
     }
     .leaderboard-rank { color: #94a3b8; font-size: 0.75rem; }
-    .leaderboard-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .leaderboard-score { color: #a78bfa; font-weight: 700; text-align: right; white-space: nowrap; }
-    .leaderboard-status { color: #94a3b8; font-size: 0.82rem; text-align: center; padding: 10px 4px; }
-    .leaderboard-time { display: block; color: #94a3b8; font-size: 0.7rem; font-weight: 400; }
+    .leaderboard-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .leaderboard-score {
+      color: #a78bfa;
+      font-weight: 700;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .leaderboard-status {
+      color: #94a3b8;
+      font-size: 0.82rem;
+      text-align: center;
+      padding: 10px 4px;
+    }
+    .leaderboard-time {
+      display: block;
+      color: #94a3b8;
+      font-size: 0.7rem;
+      font-weight: 400;
+    }
 
     .nickname-field { margin: 4px 0 10px; text-align: left; }
-    .nickname-field label { display: block; margin-bottom: 6px; color: #cbd5e1; font-size: 0.85rem; }
+    .nickname-field label {
+      display: block;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+      font-size: 0.85rem;
+    }
     .nickname-field input { width: 100%; }
-    .score-save-status { color: #a5b4fc; font-size: 0.82rem; margin: 0 0 14px; }
+    .score-save-status {
+      color: #a5b4fc;
+      font-size: 0.82rem;
+      margin: 0 0 14px;
+    }
 
-    /* Watermark */
     .watermark {
       position: fixed;
       bottom: 14px;
@@ -227,10 +262,17 @@
       user-select: none;
     }
 
-    /* Error */
-    .error-msg { color: #f87171; font-size: 0.85rem; min-height: 20px; margin: 4px 0; }
-
-    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 18px 0; }
+    .error-msg {
+      color: #f87171;
+      font-size: 0.85rem;
+      min-height: 20px;
+      margin: 4px 0;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      margin: 18px 0;
+    }
   </style>
 </head>
 <body>
@@ -243,31 +285,42 @@
     <button class="btn btn-primary" onclick="goMode('casual')">🎮 Casual — Set your own range</button>
     <button class="btn btn-secondary" onclick="goMode('competitive')">🏆 Competitive — Beat your record</button>
     <hr class="divider" />
+
     <div class="scores" id="best-scores"></div>
+
     <hr class="divider" />
+
     <section class="leaderboard-section" aria-labelledby="leaderboard-title">
       <div class="leaderboard-heading">
         <h2 id="leaderboard-title">Level 1 Leaderboard</h2>
-        <select id="leaderboard-level" class="leaderboard-level" aria-label="Choose leaderboard level" onchange="loadLeaderboard(this.value)">
+        <select id="leaderboard-level" class="leaderboard-level"
+          aria-label="Choose leaderboard level"
+          onchange="loadLeaderboard(this.value)">
           <option value="100">1–100</option>
           <option value="1000">1–1 000</option>
           <option value="10000">1–10 000</option>
         </select>
       </div>
-      <p class="leaderboard-status" id="leaderboard-status" aria-live="polite">Loading scores…</p>
-      <ol class="leaderboard-list" id="leaderboard-list" aria-label="Top 10 scores" hidden></ol>
+
+      <p class="leaderboard-status" id="leaderboard-status" aria-live="polite">
+        Loading scores…
+      </p>
+      <ol class="leaderboard-list" id="leaderboard-list"
+        aria-label="Top 10 scores" hidden></ol>
     </section>
-    <button class="btn btn-danger btn-sm" onclick="clearScores()">🗑 Clear Records</button>
+
+    <button class="btn btn-danger btn-sm" id="clear-records-btn"
+      onclick="clearScores()">🗑 Clear Records</button>
   </div>
 
   <!-- SCREEN 1b: Casual setup -->
   <div id="screen-casual" class="screen">
     <div class="input-row">
-      <label>Min</label>
+      <label for="casual-min">Min</label>
       <input type="number" id="casual-min" value="1" min="0" />
     </div>
     <div class="input-row">
-      <label>Max</label>
+      <label for="casual-max">Max</label>
       <input type="number" id="casual-max" value="100" min="1" />
     </div>
     <div class="error-msg" id="casual-err"></div>
@@ -279,9 +332,11 @@
   <div id="screen-levels" class="screen">
     <div class="nickname-field">
       <label for="competitive-username">Leaderboard nickname</label>
-      <input type="text" id="competitive-username" maxlength="80" autocomplete="nickname" placeholder="Enter your nickname" />
+      <input type="text" id="competitive-username" maxlength="80"
+        autocomplete="nickname" placeholder="Enter your nickname" />
     </div>
     <div class="error-msg" id="competitive-err"></div>
+
     <button class="level-btn level-1" onclick="startCompetitive(100)">
       <span>⭐ Level 1</span><span class="level-badge">1 – 100</span>
     </button>
@@ -291,14 +346,18 @@
     <button class="level-btn level-3" onclick="startCompetitive(10000)">
       <span>⭐⭐⭐ Level 3</span><span class="level-badge">1 – 10 000</span>
     </button>
-    <button class="btn btn-ghost" style="margin-top:12px" onclick="show('screen-mode')">← Back</button>
+
+    <button class="btn btn-ghost" style="margin-top:12px"
+      onclick="show('screen-mode')">← Back</button>
   </div>
 
   <!-- SCREEN 2: Game -->
   <div id="screen-game" class="screen">
     <div class="range-label" id="range-label"></div>
     <div class="guess-row">
-      <input type="text" id="guess-input" inputmode="numeric" autocomplete="off" placeholder="Your guess…" onkeydown="if(event.key==='Enter')submitGuess()" />
+      <input type="text" id="guess-input" inputmode="numeric"
+        autocomplete="off" placeholder="Your guess…"
+        onkeydown="if(event.key==='Enter')submitGuess()" />
       <button class="btn btn-primary" onclick="submitGuess()">Guess!</button>
     </div>
     <div class="error-msg" id="guess-err"></div>
@@ -312,9 +371,11 @@
     <div class="win-title" id="win-title">You got it!</div>
     <div class="win-sub" id="win-sub"></div>
     <p class="score-save-status" id="score-save-status" aria-live="polite" hidden></p>
+
     <div class="win-buttons">
       <button class="btn btn-primary" id="btn-again" onclick="">Play Again</button>
-      <button class="btn btn-ghost" onclick="show('screen-mode'); loadScores(); loadLeaderboard()">Main Menu</button>
+      <button class="btn btn-ghost"
+        onclick="show('screen-mode'); loadScores(); loadLeaderboard()">Main Menu</button>
     </div>
   </div>
 </div>
@@ -325,6 +386,13 @@
   let currentUsername = '';
   let gameStartedAt = null;
   let leaderboardRequestId = 0;
+  let clearingRecords = false;
+
+  const personalRecordNames = {
+    100: 'Level 1 (1–100)',
+    1000: 'Level 2 (1–1 000)',
+    10000: 'Level 3 (1–10 000)'
+  };
 
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -336,41 +404,106 @@
     else show('screen-levels');
   }
 
+  function renderPersonalScores(data) {
+    const el = document.getElementById('best-scores');
+    let html = '';
+
+    for (const [key, label] of Object.entries(personalRecordNames)) {
+      const value = data ? data[key] : null;
+      const displayValue =
+        value !== null && value !== undefined
+          ? `${value} guesses`
+          : '—';
+
+      html += `<div class="score-row">
+        <span>${label}</span>
+        <span class="score-val">${displayValue}</span>
+      </div>`;
+    }
+
+    el.innerHTML = html;
+  }
+
   async function loadScores() {
     const el = document.getElementById('best-scores');
 
-    // Clear Records 後，重新整理也維持隱藏個人紀錄
-    if (localStorage.getItem('hidePersonalRecords') === 'true') {
-      el.innerHTML = '';
-      return;
-    }
+    try {
+      const response = await fetch('/api/best_scores', {
+        cache: 'no-store'
+      });
 
-    const res = await fetch('/api/best_scores');
-    const data = await res.json();
-    const names = { 100: 'Level 1 (1–100)', 1000: 'Level 2 (1–1 000)', 10000: 'Level 3 (1–10 000)' };
-    let html = '';
-    for (const [k, label] of Object.entries(names)) {
-      const v = data[k];
-      html += `<div class="score-row"><span>${label}</span><span class="score-val">${v !== null ? v + ' guesses' : '—'}</span></div>`;
+      if (!response.ok) {
+        throw new Error('Failed to load personal records');
+      }
+
+      const data = await response.json();
+      renderPersonalScores(data);
+    } catch (error) {
+      el.innerHTML = '<div class="score-row"><span>Personal records unavailable. Please refresh.</span></div>';
+      console.error('Could not load personal records:', error);
     }
-    el.innerHTML = html;
+  }
+
+  async function clearScores() {
+    if (clearingRecords) return;
+
+    if (!confirm('Clear your personal records?')) return;
+
+    const button = document.getElementById('clear-records-btn');
+    clearingRecords = true;
+    button.disabled = true;
+    button.textContent = 'Clearing…';
+
+    try {
+      // 呼叫後端，只清除目前玩家的個人紀錄。
+      // 這個 API 不會刪除全球排行榜。
+      const response = await fetch('/api/clear_scores', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'Could not clear personal records');
+      }
+
+      // 從後端重新讀取，確認紀錄真的已清除。
+      await loadScores();
+      alert('Your personal records have been cleared.');
+    } catch (error) {
+      console.error('Could not clear personal records:', error);
+      alert(error.message || 'Could not clear personal records. Please try again.');
+      await loadScores();
+    } finally {
+      clearingRecords = false;
+      button.disabled = false;
+      button.textContent = '🗑 Clear Records';
+    }
   }
 
   async function loadLeaderboard(level) {
     const requestId = ++leaderboardRequestId;
     const levelSelect = document.getElementById('leaderboard-level');
     const selectedLevel = Number(level || levelSelect.value || 100);
+
     const levelNames = {
       100: 'Level 1 Leaderboard',
       1000: 'Level 2 Leaderboard',
-      10000: 'Level 3 Leaderboard',
+      10000: 'Level 3 Leaderboard'
     };
+
     if (!levelNames[selectedLevel]) return;
+
     levelSelect.value = String(selectedLevel);
     document.getElementById('leaderboard-title').textContent = levelNames[selectedLevel];
 
     const status = document.getElementById('leaderboard-status');
     const list = document.getElementById('leaderboard-list');
+
     status.hidden = false;
     status.textContent = 'Loading scores…';
     list.hidden = true;
@@ -378,12 +511,15 @@
 
     try {
       const response = await fetch(`/api/leaderboard?level=${selectedLevel}`);
+
       if (requestId !== leaderboardRequestId) return;
       if (!response.ok) throw new Error('Leaderboard request failed');
 
       const scores = await response.json();
+
       if (requestId !== leaderboardRequestId) return;
       if (!Array.isArray(scores)) throw new Error('Unexpected leaderboard response');
+
       if (scores.length === 0) {
         status.textContent = 'No scores yet. Be the first to set a record!';
         return;
@@ -399,23 +535,27 @@
 
         const name = document.createElement('span');
         name.className = 'leaderboard-name';
-        name.textContent = typeof entry.username === 'string' && entry.username.trim()
-          ? entry.username
-          : 'Anonymous';
+        name.textContent =
+          typeof entry.username === 'string' && entry.username.trim()
+            ? entry.username
+            : 'Anonymous';
 
         const value = document.createElement('span');
         value.className = 'leaderboard-score';
+
         const attempts = Number(entry.attempts);
         value.append(document.createTextNode(
           `${attempts} ${attempts === 1 ? 'guess' : 'guesses'}`
         ));
+
         const time = document.createElement('small');
         time.className = 'leaderboard-time';
-        time.textContent = entry.time_taken !== null && Number.isFinite(Number(entry.time_taken))
-          ? `${Number(entry.time_taken).toFixed(1)}s`
-          : 'Time unavailable';
-        value.append(time);
+        time.textContent =
+          entry.time_taken !== null && Number.isFinite(Number(entry.time_taken))
+            ? `${Number(entry.time_taken).toFixed(1)}s`
+            : 'Time unavailable';
 
+        value.append(time);
         row.append(rank, name, value);
         list.append(row);
       });
@@ -428,45 +568,55 @@
     }
   }
 
-  function clearScores() {
-    if (!confirm('Clear your personal records?')) return;
+  async function startGame(min, max, mode, difficulty) {
+    try {
+      const response = await fetch('/api/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ min, max, mode })
+      });
 
-    // 只記住本機要隱藏個人紀錄，不呼叫後端、不影響全站排行榜
-    localStorage.setItem('hidePersonalRecords', 'true');
+      const data = await response.json();
 
-    const bestScoresEl = document.getElementById('best-scores');
-    if (bestScoresEl) {
-      bestScoresEl.innerHTML = '';
+      if (!response.ok || data.error) {
+        alert(data.error || 'Could not start game.');
+        return;
+      }
+
+      currentMode = mode;
+      currentMax = difficulty;
+      gameStartedAt = mode === 'competitive' ? performance.now() : null;
+
+      document.getElementById('range-label').textContent =
+        `Guess a number between ${min} and ${max}`;
+      document.getElementById('hint').textContent = '';
+      document.getElementById('hint').className = 'hint';
+      document.getElementById('count-label').textContent = '';
+      document.getElementById('guess-input').value = '';
+      document.getElementById('guess-err').textContent = '';
+
+      show('screen-game');
+      document.getElementById('guess-input').focus();
+    } catch (error) {
+      alert('Could not start the game. Please try again.');
     }
   }
 
-  async function startGame(min, max, mode, difficulty) {
-    const res = await fetch('/api/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ min, max, mode }),
-    });
-    const data = await res.json();
-    if (data.error) { alert(data.error); return; }
-    currentMode = mode;
-    currentMax = difficulty;
-    gameStartedAt = mode === 'competitive' ? performance.now() : null;
-    document.getElementById('range-label').textContent = `Guess a number between ${min} and ${max}`;
-    document.getElementById('hint').textContent = '';
-    document.getElementById('hint').className = 'hint';
-    document.getElementById('count-label').textContent = '';
-    document.getElementById('guess-input').value = '';
-    document.getElementById('guess-err').textContent = '';
-    show('screen-game');
-    document.getElementById('guess-input').focus();
-  }
-
   function startCasual() {
-    const min = parseInt(document.getElementById('casual-min').value);
-    const max = parseInt(document.getElementById('casual-max').value);
+    const min = parseInt(document.getElementById('casual-min').value, 10);
+    const max = parseInt(document.getElementById('casual-max').value, 10);
     const err = document.getElementById('casual-err');
-    if (isNaN(min) || isNaN(max) || min < 0) { err.textContent = 'Enter valid positive numbers.'; return; }
-    if (max <= min) { err.textContent = 'Max must be greater than Min.'; return; }
+
+    if (isNaN(min) || isNaN(max) || min < 0) {
+      err.textContent = 'Enter valid positive numbers.';
+      return;
+    }
+
+    if (max <= min) {
+      err.textContent = 'Max must be greater than Min.';
+      return;
+    }
+
     err.textContent = '';
     startGame(min, max, 'casual', 0);
   }
@@ -474,12 +624,15 @@
   function startCompetitive(max) {
     const usernameInput = document.getElementById('competitive-username');
     const error = document.getElementById('competitive-err');
+
     currentUsername = usernameInput.value.trim();
+
     if (!currentUsername) {
       error.textContent = 'Enter a nickname to appear on the leaderboard.';
       usernameInput.focus();
       return;
     }
+
     error.textContent = '';
     startGame(1, max, 'competitive', max);
   }
@@ -487,6 +640,7 @@
   async function saveCompetitiveScore(attempts) {
     const status = document.getElementById('score-save-status');
     const timeTaken = Math.max(0, (performance.now() - gameStartedAt) / 1000);
+
     status.hidden = false;
     status.textContent = 'Saving your score…';
 
@@ -498,14 +652,17 @@
           username: currentUsername,
           level: currentMax,
           attempts,
-          time_taken: timeTaken,
-        }),
+          time_taken: timeTaken
+        })
       });
+
       if (!response.ok) throw new Error('Score could not be saved');
+
       status.textContent = 'Your score was added to the leaderboard.';
       await loadLeaderboard(currentMax);
     } catch (error) {
-      status.textContent = 'Your win was recorded, but the leaderboard could not be updated.';
+      status.textContent =
+        'Your win was recorded, but the leaderboard could not be updated.';
     }
   }
 
@@ -513,56 +670,81 @@
     const input = document.getElementById('guess-input');
     const errEl = document.getElementById('guess-err');
     const val = input.value.trim();
-    if (!val) { errEl.textContent = 'Enter a number first.'; return; }
 
-    const res = await fetch('/api/guess', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ guess: val }),
-    });
-    const data = await res.json();
+    if (!val) {
+      errEl.textContent = 'Enter a number first.';
+      return;
+    }
 
-    if (data.error) { errEl.textContent = data.error; return; }
-    errEl.textContent = '';
-    input.value = '';
+    try {
+      const response = await fetch('/api/guess', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guess: val })
+      });
 
-    const hintEl = document.getElementById('hint');
-    const countEl = document.getElementById('count-label');
+      const data = await response.json();
 
-    if (data.result === 'cheat') {
-      countEl.textContent = `Attempts: ${data.count}`;
-      alert(`Cheat code accepted! The correct answer is ${data.answer}.`);
-      input.focus();
-    } else if (data.result === 'win') {
-      const trophy = data.new_record ? '🏆' : '🎉';
-      const title = data.new_record ? 'NEW RECORD!' : 'You got it!';
-      let sub = `You guessed it in ${data.count} ${data.count === 1 ? 'try' : 'tries'}.`;
-      if (!data.new_record && data.best) sub += ` Best: ${data.best} guesses.`;
-
-      document.getElementById('win-trophy').textContent = trophy;
-      document.getElementById('win-title').textContent = title;
-      document.getElementById('win-sub').textContent = sub;
-      const scoreSaveStatus = document.getElementById('score-save-status');
-      scoreSaveStatus.hidden = currentMode !== 'competitive';
-      if (currentMode === 'competitive') {
-        document.getElementById('leaderboard-level').value = String(currentMax);
-        saveCompetitiveScore(data.count);
+      if (!response.ok || data.error) {
+        errEl.textContent = data.error || 'Could not submit guess.';
+        return;
       }
 
-      // Set "Play Again" behavior
-      const btn = document.getElementById('btn-again');
-      if (currentMode === 'competitive') {
-        btn.onclick = () => startCompetitive(currentMax);
+      errEl.textContent = '';
+      input.value = '';
+
+      const hintEl = document.getElementById('hint');
+      const countEl = document.getElementById('count-label');
+
+      if (data.result === 'cheat') {
+        countEl.textContent = `Attempts: ${data.count}`;
+        alert(`Cheat code accepted! The correct answer is ${data.answer}.`);
+        input.focus();
+      } else if (data.result === 'win') {
+        const trophy = data.new_record ? '🏆' : '🎉';
+        const title = data.new_record ? 'NEW RECORD!' : 'You got it!';
+
+        let sub = `You guessed it in ${data.count} ${data.count === 1 ? 'try' : 'tries'}.`;
+
+        if (!data.new_record && data.best !== null && data.best !== undefined) {
+          sub += ` Best: ${data.best} guesses.`;
+        }
+
+        document.getElementById('win-trophy').textContent = trophy;
+        document.getElementById('win-title').textContent = title;
+        document.getElementById('win-sub').textContent = sub;
+
+        const scoreSaveStatus = document.getElementById('score-save-status');
+        scoreSaveStatus.hidden = currentMode !== 'competitive';
+
+        if (currentMode === 'competitive') {
+          document.getElementById('leaderboard-level').value = String(currentMax);
+          saveCompetitiveScore(data.count);
+          await loadScores();
+        }
+
+        const btn = document.getElementById('btn-again');
+
+        if (currentMode === 'competitive') {
+          btn.onclick = () => startCompetitive(currentMax);
+        } else {
+          btn.onclick = () => show('screen-casual');
+        }
+
+        show('screen-win');
       } else {
-        btn.onclick = () => show('screen-casual');
+        hintEl.textContent = data.hint;
+        hintEl.className =
+          'hint ' + (data.hint.includes('low') ? 'low' : 'high');
+
+        document.getElementById('range-label').textContent =
+          `Guess a number between ${data.min} and ${data.max}`;
+
+        countEl.textContent = `Attempts: ${data.count}`;
+        input.focus();
       }
-      show('screen-win');
-    } else {
-      hintEl.textContent = data.hint;
-      hintEl.className = 'hint ' + (data.hint.includes('low') ? 'low' : 'high');
-      document.getElementById('range-label').textContent = `Guess a number between ${data.min} and ${data.max}`;
-      countEl.textContent = `Attempts: ${data.count}`;
-      input.focus();
+    } catch (error) {
+      errEl.textContent = 'Something went wrong. Please try again.';
     }
   }
 
@@ -570,6 +752,7 @@
   loadScores();
   loadLeaderboard();
 </script>
-  <div class="watermark">[eric10074]</div>
+
+<div class="watermark">[eric10074]</div>
 </body>
 </html>

@@ -2,8 +2,8 @@
 import os
 import math
 import random
+import secrets
 import threading
-import hmac
 from contextlib import contextmanager
 
 import psycopg
@@ -11,6 +11,7 @@ from psycopg.rows import dict_row
 from flask import Flask, render_template, request, jsonify, session
 
 app = Flask(__name__)
+
 app.secret_key = os.environ.get(
     "SESSION_SECRET",
     "guess-number-secret-change-this",
@@ -23,6 +24,20 @@ MAX_USERNAME_LENGTH = 80
 
 _schema_lock = threading.Lock()
 _schema_ready = False
+
+
+def get_player_id():
+    """
+    使用 Flask session 識別目前的玩家。
+    同一個瀏覽器保留 session cookie 時，個人紀錄就能持續存在。
+    """
+    player_id = session.get("player_id")
+
+    if not player_id:
+        player_id = secrets.token_urlsafe(32)
+        session["player_id"] = player_id
+
+    return player_id
 
 
 @contextmanager
@@ -44,14 +59,21 @@ def db_connection():
         if not _schema_ready:
             with _schema_lock:
                 if not _schema_ready:
+                    # 個人最佳紀錄：每位玩家、每個難度各自一筆。
+                    # 不使用全球排行榜資料來儲存個人紀錄。
                     conn.execute("""
-                        CREATE TABLE IF NOT EXISTS best_scores (
-                            level INTEGER PRIMARY KEY,
+                        CREATE TABLE IF NOT EXISTS personal_best_scores (
+                            player_id TEXT NOT NULL,
+                            level INTEGER NOT NULL
+                                CHECK (level IN (100, 1000, 10000)),
                             attempts INTEGER NOT NULL
-                                CHECK (attempts > 0)
+                                CHECK (attempts > 0),
+                            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                            PRIMARY KEY (player_id, level)
                         )
                     """)
 
+                    # 全球排行榜仍然獨立保存。
                     conn.execute("""
                         CREATE TABLE IF NOT EXISTS leaderboard (
                             id BIGSERIAL PRIMARY KEY,
@@ -133,40 +155,69 @@ def parse_integer(value):
     return None
 
 
-def load_best(level):
-    try:
-        with db_connection() as conn:
-            row = conn.execute(
-                """
-                SELECT attempts
-                FROM best_scores
-                WHERE level = %s
-                """,
-                (level,),
-            ).fetchone()
-
-            return row["attempts"] if row else None
-
-    except Exception:
-        app.logger.exception(
-            "Could not load best score for level %s",
-            level,
-        )
-        return None
-
-
-def save_best(level, attempts):
+def load_best(player_id, level):
+    """取得目前玩家在指定難度的個人最佳紀錄。"""
     with db_connection() as conn:
-        conn.execute(
+        row = conn.execute(
             """
-            INSERT INTO best_scores (level, attempts)
-            VALUES (%s, %s)
-            ON CONFLICT (level)
-            DO UPDATE SET attempts =
-                LEAST(best_scores.attempts, EXCLUDED.attempts)
+            SELECT attempts
+            FROM personal_best_scores
+            WHERE player_id = %s AND level = %s
             """,
-            (level, attempts),
+            (player_id, level),
+        ).fetchone()
+
+    return row["attempts"] if row else None
+
+
+def save_best(player_id, level, attempts):
+    """
+    更新個人最佳紀錄。
+    回傳 (是否創下新紀錄, 更新後的最佳猜測次數)。
+    """
+    with db_connection() as conn:
+        # 同一玩家同一難度的更新依序處理，避免同時提交造成誤判。
+        conn.execute(
+            "SELECT pg_advisory_xact_lock(hashtext(%s), %s)",
+            (player_id, level),
         )
+
+        row = conn.execute(
+            """
+            SELECT attempts
+            FROM personal_best_scores
+            WHERE player_id = %s AND level = %s
+            FOR UPDATE
+            """,
+            (player_id, level),
+        ).fetchone()
+
+        if row is None:
+            conn.execute(
+                """
+                INSERT INTO personal_best_scores (
+                    player_id, level, attempts
+                )
+                VALUES (%s, %s, %s)
+                """,
+                (player_id, level, attempts),
+            )
+            return True, attempts
+
+        previous_best = row["attempts"]
+
+        if attempts < previous_best:
+            conn.execute(
+                """
+                UPDATE personal_best_scores
+                SET attempts = %s, updated_at = NOW()
+                WHERE player_id = %s AND level = %s
+                """,
+                (attempts, player_id, level),
+            )
+            return True, attempts
+
+        return False, previous_best
 
 
 def get_leaderboard(level):
@@ -251,6 +302,9 @@ def start():
             )
         }), 400
 
+    # 確保目前玩家有自己的 session ID。
+    get_player_id()
+
     session["num"] = random.randint(min_val, max_val)
     session["min"] = min_val
     session["max"] = max_val
@@ -312,20 +366,32 @@ def guess():
     session["count"] = count
 
     if a == num:
-        best = load_best(difficulty) if difficulty else None
+        best = None
         new_record = False
 
-        if difficulty and (best is None or count < best):
-            try:
-                save_best(difficulty, count)
-                new_record = True
-                best = min(best, count) if best is not None else count
+        if difficulty in SUPPORTED_LEVELS:
+            player_id = get_player_id()
 
+            try:
+                new_record, best = save_best(
+                    player_id,
+                    difficulty,
+                    count,
+                )
             except Exception:
                 app.logger.exception(
-                    "Could not save best score for level %s",
+                    "Could not save personal best for level %s",
                     difficulty,
                 )
+
+                # 即使資料庫暫時無法更新，也盡量回傳現有最佳紀錄。
+                try:
+                    best = load_best(player_id, difficulty)
+                except Exception:
+                    app.logger.exception(
+                        "Could not load personal best for level %s",
+                        difficulty,
+                    )
 
         return jsonify({
             "result": "win",
@@ -352,12 +418,51 @@ def guess():
 
 @app.route("/api/best_scores", methods=["GET"])
 def best_scores():
+    """只回傳目前 session 玩家自己的紀錄。"""
+    player_id = get_player_id()
     scores = {}
 
-    for level in sorted(SUPPORTED_LEVELS):
-        scores[level] = load_best(level)
+    try:
+        for level in sorted(SUPPORTED_LEVELS):
+            scores[level] = load_best(player_id, level)
 
-    return jsonify(scores)
+        return jsonify(scores)
+
+    except Exception:
+        app.logger.exception("Could not load personal best scores")
+        return jsonify({
+            "error": "Personal records are temporarily unavailable"
+        }), 503
+
+
+@app.route("/api/clear_scores", methods=["POST"])
+def clear_scores():
+    """
+    只清除目前 session 玩家自己的個人最佳紀錄。
+    不會刪除或修改全球排行榜。
+    """
+    player_id = get_player_id()
+
+    try:
+        with db_connection() as conn:
+            conn.execute(
+                """
+                DELETE FROM personal_best_scores
+                WHERE player_id = %s
+                """,
+                (player_id,),
+            )
+
+        return jsonify({
+            "ok": True,
+            "message": "Personal records cleared."
+        })
+
+    except Exception:
+        app.logger.exception("Could not clear personal best scores")
+        return jsonify({
+            "error": "Could not clear personal records right now."
+        }), 503
 
 
 @app.route("/api/leaderboard", methods=["GET"])
@@ -478,6 +583,7 @@ def submit_score():
                     (attempts, time_taken, existing["id"]),
                 )
 
+            # 全球排行榜仍然只保留每個難度的前 10 名。
             conn.execute(
                 """
                 DELETE FROM leaderboard
@@ -542,15 +648,10 @@ def submit_score():
         }), 503
 
 
-@app.route("/api/clear_scores", methods=["POST"])
-def clear_scores():
-    # 個人畫面上的 Clear Records 不應清空全站資料庫。
-    # 停用此路由，避免前端誤呼叫時刪除所有玩家的紀錄。
-    return jsonify({
-        "error": "This endpoint is disabled."
-    }), 410
-
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
-    app.run(host="0.0.0.0", port=port)
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False,
+    )
