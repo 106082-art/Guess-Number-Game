@@ -477,7 +477,6 @@
           status.textContent = 'Saving your score…';
       }
 
-      // 關鍵！這兩行會抓取輸入框的名字，沒填就預設 eric10074
       const usernameInput = document.getElementById('competitive-username') || document.querySelector('input[type="text"]');
       const nickname = (usernameInput && usernameInput.value.trim() !== '') ? usernameInput.value.trim() : 'eric10074';
 
