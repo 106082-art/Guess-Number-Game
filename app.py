@@ -184,34 +184,49 @@ def get_leaderboard_data():
         return jsonify([]), 200
 
     try:
-        scores = []
+        all_scores = []
         with open(filepath, 'r', encoding='utf-8') as f:
             for line in f:
                 parts = line.strip().split(',')
                 if len(parts) >= 3:
-                    scores.append({
+                    all_scores.append({
                         'nickname': parts[0],
                         'attempts': int(parts[1]),
                         'time_taken': float(parts[2])
                     })
-        # 依照猜測次數與花費時間排序
-        scores.sort(key=lambda x: (x['attempts'], x['time_taken']))
-        return jsonify(scores[:10]), 200
+
+        # 1. 先按「猜測次數」與「時間」由優到劣排序
+        all_scores.sort(key=lambda x: (x['attempts'], x['time_taken']))
+
+        # 2. 同名去重：每個 nickname 只留成績最好（排在最前面）的那一筆
+        unique_scores = []
+        seen_nicknames = set()
+
+        for s in all_scores:
+            if s['nickname'] not in seen_nicknames:
+                seen_nicknames.add(s['nickname'])
+                unique_scores.append(s)
+
+        # 3. 回傳前 10 名
+        return jsonify(unique_scores[:10]), 200
     except Exception:
         return jsonify([]), 200
-
 @app.route('/api/score', methods=['POST'])
 def save_score_data():
-    data = request.get_json() or {}
-    nickname = data.get('nickname', 'Anonymous')
-    level = data.get('level', 100)
-    attempts = data.get('attempts', 0)
-    time_taken = data.get('time_taken', 0)
+        data = request.get_json(silent=True) or {}
+        # 優先抓取 JSON 裡面的 nickname，如果沒有再抓 Form，都沒有才用 Anonymous
+        nickname = data.get('nickname') or request.form.get('nickname') or 'Anonymous'
+        if not str(nickname).strip():
+            nickname = 'Anonymous'
 
-    os.makedirs(BEST_SCORE_DIR, exist_ok=True)
-    filepath = os.path.join(BEST_SCORE_DIR, f"best_{level}.txt")
+        level = data.get('level') or request.form.get('level') or 100
+        attempts = data.get('attempts') or request.form.get('attempts') or 0
+        time_taken = data.get('time_taken') or request.form.get('time_taken') or 0
 
-    with open(filepath, 'a', encoding='utf-8') as f:
-        f.write(f"{nickname},{attempts},{time_taken}\n")
+        os.makedirs(BEST_SCORE_DIR, exist_ok=True)
+        filepath = os.path.join(BEST_SCORE_DIR, f"best_{level}.txt")
 
-    return jsonify({'status': 'success'}), 200
+        with open(filepath, 'a', encoding='utf-8') as f:
+            f.write(f"{nickname},{attempts},{time_taken}\n")
+
+        return jsonify({'status': 'success'}), 200
