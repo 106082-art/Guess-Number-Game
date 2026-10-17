@@ -249,9 +249,28 @@ def get_leaderboard():
                 with connection.cursor() as cursor:
                     cursor.execute(
                         """
+                        WITH ranked_scores AS (
+                            SELECT
+                                id,
+                                username,
+                                level,
+                                attempts,
+                                time_taken,
+                                created_at,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY LOWER(BTRIM(username))
+                                    ORDER BY
+                                        attempts ASC,
+                                        time_taken ASC NULLS LAST,
+                                        created_at ASC,
+                                        id ASC
+                                ) AS player_rank
+                            FROM leaderboard
+                            WHERE level = %s
+                        )
                         SELECT id, username, level, attempts, time_taken, created_at
-                        FROM leaderboard
-                        WHERE level = %s
+                        FROM ranked_scores
+                        WHERE player_rank = 1
                         ORDER BY
                             attempts ASC,
                             time_taken ASC NULLS LAST,
