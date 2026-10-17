@@ -1,4 +1,3 @@
-
 import os
 import math
 import random
@@ -232,7 +231,7 @@ def get_leaderboard(level):
                 time_taken ASC,
                 created_at ASC,
                 id ASC
-            LIMIT 10
+            LIMIT 50
             """,
             (level,),
         ).fetchall()
@@ -263,44 +262,35 @@ def start():
     data = request.get_json(silent=True)
 
     if not isinstance(data, dict):
-        return jsonify({
-            "error": "Request body must be a JSON object"
-        }), 400
+        return jsonify({"error": "Request body must be a JSON object"}), 400
 
     mode = data.get("mode")
 
     if mode not in {"casual", "competitive"}:
-        return jsonify({
-            "error": "mode must be casual or competitive"
-        }), 400
+        return jsonify({"error": "mode must be casual or competitive"}), 400
 
     min_val = parse_integer(data.get("min", 1))
     max_val = parse_integer(data.get("max", data.get("level", 100)))
 
     if min_val is None or max_val is None:
-        return jsonify({
-            "error": "Min and Max must be whole numbers"
-        }), 400
+        return jsonify({"error": "Min and Max must be whole numbers"}), 400
 
     if min_val < 0 or max_val > MAX_GAME_NUMBER:
-        return jsonify({
-            "error": f"Numbers must be between 0 and {MAX_GAME_NUMBER}"
-        }), 400
+        return jsonify(
+            {"error": f"Numbers must be between 0 and {MAX_GAME_NUMBER}"}
+        ), 400
 
     if min_val >= max_val:
-        return jsonify({
-            "error": "Max must be greater than Min"
-        }), 400
+        return jsonify({"error": "Max must be greater than Min"}), 400
 
-    if mode == "competitive" and (
-        min_val != 1 or max_val not in SUPPORTED_LEVELS
-    ):
-        return jsonify({
-            "error": (
-                "Competitive levels must be 100, 1000, or 10000 "
-                "with a minimum of 1"
-            )
-        }), 400
+    if mode == "competitive" and (min_val != 1 or max_val not in SUPPORTED_LEVELS):
+        return jsonify(
+            {
+                "error": (
+                    "Competitive levels must be 100, 1000, or 10000 with a minimum of 1"
+                )
+            }
+        ), 400
 
     # 確保目前玩家有自己的 session ID。
     get_player_id()
@@ -312,11 +302,13 @@ def start():
     session["mode"] = mode
     session["difficulty"] = max_val if mode == "competitive" else 0
 
-    return jsonify({
-        "ok": True,
-        "min": min_val,
-        "max": max_val,
-    })
+    return jsonify(
+        {
+            "ok": True,
+            "min": min_val,
+            "max": max_val,
+        }
+    )
 
 
 @app.route("/api/guess", methods=["POST"])
@@ -324,31 +316,27 @@ def guess():
     data = request.get_json(silent=True)
 
     if not isinstance(data, dict):
-        return jsonify({
-            "error": "Request body must be a JSON object"
-        }), 400
+        return jsonify({"error": "Request body must be a JSON object"}), 400
 
     submitted_guess = data.get("guess")
     num = session.get("num")
 
     if num is None:
-        return jsonify({
-            "error": "No game in progress"
-        }), 400
+        return jsonify({"error": "No game in progress"}), 400
 
     if str(submitted_guess).strip() == CHEAT_CODE:
-        return jsonify({
-            "result": "cheat",
-            "answer": num,
-            "count": session.get("count", 0),
-        })
+        return jsonify(
+            {
+                "result": "cheat",
+                "answer": num,
+                "count": session.get("count", 0),
+            }
+        )
 
     a = parse_integer(submitted_guess)
 
     if a is None:
-        return jsonify({
-            "error": "Enter a valid number"
-        }), 400
+        return jsonify({"error": "Enter a valid number"}), 400
 
     cur_min = session.get("min")
     cur_max = session.get("max")
@@ -356,11 +344,9 @@ def guess():
     difficulty = session.get("difficulty", 0)
 
     if a < cur_min or a > cur_max:
-        return jsonify({
-            "error": (
-                f"Out of range! Guess between {cur_min} and {cur_max}"
-            )
-        }), 400
+        return jsonify(
+            {"error": (f"Out of range! Guess between {cur_min} and {cur_max}")}
+        ), 400
 
     count += 1
     session["count"] = count
@@ -393,12 +379,14 @@ def guess():
                         difficulty,
                     )
 
-        return jsonify({
-            "result": "win",
-            "count": count,
-            "new_record": new_record,
-            "best": best,
-        })
+        return jsonify(
+            {
+                "result": "win",
+                "count": count,
+                "new_record": new_record,
+                "best": best,
+            }
+        )
 
     if a > num:
         session["max"] = a - 1
@@ -407,13 +395,15 @@ def guess():
         session["min"] = a + 1
         hint = "Too low! Go higher."
 
-    return jsonify({
-        "result": "wrong",
-        "hint": hint,
-        "min": session["min"],
-        "max": session["max"],
-        "count": count,
-    })
+    return jsonify(
+        {
+            "result": "wrong",
+            "hint": hint,
+            "min": session["min"],
+            "max": session["max"],
+            "count": count,
+        }
+    )
 
 
 @app.route("/api/best_scores", methods=["GET"])
@@ -430,9 +420,7 @@ def best_scores():
 
     except Exception:
         app.logger.exception("Could not load personal best scores")
-        return jsonify({
-            "error": "Personal records are temporarily unavailable"
-        }), 503
+        return jsonify({"error": "Personal records are temporarily unavailable"}), 503
 
 
 @app.route("/api/clear_scores", methods=["POST"])
@@ -453,16 +441,11 @@ def clear_scores():
                 (player_id,),
             )
 
-        return jsonify({
-            "ok": True,
-            "message": "Personal records cleared."
-        })
+        return jsonify({"ok": True, "message": "Personal records cleared."})
 
     except Exception:
         app.logger.exception("Could not clear personal best scores")
-        return jsonify({
-            "error": "Could not clear personal records right now."
-        }), 503
+        return jsonify({"error": "Could not clear personal records right now."}), 503
 
 
 @app.route("/api/leaderboard", methods=["GET"])
@@ -470,18 +453,14 @@ def leaderboard():
     level = parse_integer(request.args.get("level", "100"))
 
     if level not in SUPPORTED_LEVELS:
-        return jsonify({
-            "error": "Invalid leaderboard level"
-        }), 400
+        return jsonify({"error": "Invalid leaderboard level"}), 400
 
     try:
         return jsonify(get_leaderboard(level))
 
     except Exception:
         app.logger.exception("Could not load leaderboard")
-        return jsonify({
-            "error": "Leaderboard is temporarily unavailable"
-        }), 503
+        return jsonify({"error": "Leaderboard is temporarily unavailable"}), 503
 
 
 @app.route("/api/score", methods=["POST"])
@@ -489,47 +468,33 @@ def submit_score():
     data = request.get_json(silent=True)
 
     if not isinstance(data, dict):
-        return jsonify({
-            "error": "Request body must be a JSON object"
-        }), 400
+        return jsonify({"error": "Request body must be a JSON object"}), 400
 
     username = data.get("username")
     level = parse_integer(data.get("level"))
     attempts = parse_integer(data.get("attempts"))
 
     if not isinstance(username, str):
-        return jsonify({
-            "error": "Username is required"
-        }), 400
+        return jsonify({"error": "Username is required"}), 400
 
     username = username.strip()
 
     if not username or len(username) > MAX_USERNAME_LENGTH:
-        return jsonify({
-            "error": "Invalid username"
-        }), 400
+        return jsonify({"error": "Invalid username"}), 400
 
     if level not in SUPPORTED_LEVELS:
-        return jsonify({
-            "error": "Invalid level"
-        }), 400
+        return jsonify({"error": "Invalid level"}), 400
 
     if attempts is None or attempts < 1:
-        return jsonify({
-            "error": "Invalid attempts"
-        }), 400
+        return jsonify({"error": "Invalid attempts"}), 400
 
     try:
         time_taken = float(data.get("time_taken"))
     except (TypeError, ValueError):
-        return jsonify({
-            "error": "Invalid game time"
-        }), 400
+        return jsonify({"error": "Invalid game time"}), 400
 
     if not math.isfinite(time_taken) or not 0 <= time_taken <= 86400:
-        return jsonify({
-            "error": "Invalid game time"
-        }), 400
+        return jsonify({"error": "Invalid game time"}), 400
 
     try:
         with db_connection() as conn:
@@ -552,12 +517,9 @@ def submit_score():
             improved = existing is None
 
             if existing is not None:
-                improved = (
-                    attempts < existing["attempts"]
-                    or (
-                        attempts == existing["attempts"]
-                        and time_taken < existing["time_taken"]
-                    )
+                improved = attempts < existing["attempts"] or (
+                    attempts == existing["attempts"]
+                    and time_taken < existing["time_taken"]
                 )
 
             if improved and existing is None:
@@ -597,7 +559,7 @@ def submit_score():
                           time_taken ASC,
                           created_at ASC,
                           id ASC
-                      LIMIT 10
+                      LIMIT 50
                   )
                 """,
                 (level, level),
@@ -634,18 +596,18 @@ def submit_score():
                 None,
             )
 
-        return jsonify({
-            "ok": True,
-            "updated": improved,
-            "qualified": rank is not None,
-            "rank": rank,
-        }), 201
+        return jsonify(
+            {
+                "ok": True,
+                "updated": improved,
+                "qualified": rank is not None,
+                "rank": rank,
+            }
+        ), 201
 
     except Exception:
         app.logger.exception("Could not save leaderboard score")
-        return jsonify({
-            "error": "Could not save score right now"
-        }), 503
+        return jsonify({"error": "Could not save score right now"}), 503
 
 
 if __name__ == "__main__":
