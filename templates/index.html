@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -336,9 +337,16 @@
   }
 
   async function loadScores() {
+    const el = document.getElementById('best-scores');
+
+    // Clear Records 後，重新整理也維持隱藏個人紀錄
+    if (localStorage.getItem('hidePersonalRecords') === 'true') {
+      el.innerHTML = '';
+      return;
+    }
+
     const res = await fetch('/api/best_scores');
     const data = await res.json();
-    const el = document.getElementById('best-scores');
     const names = { 100: 'Level 1 (1–100)', 1000: 'Level 2 (1–1 000)', 10000: 'Level 3 (1–10 000)' };
     let html = '';
     for (const [k, label] of Object.entries(names)) {
@@ -420,9 +428,16 @@
     }
   }
 
-  async function clearScores() {
-    await fetch('/api/clear_scores', { method: 'POST' });
-    loadScores();
+  function clearScores() {
+    if (!confirm('Clear your personal records?')) return;
+
+    // 只記住本機要隱藏個人紀錄，不呼叫後端、不影響全站排行榜
+    localStorage.setItem('hidePersonalRecords', 'true');
+
+    const bestScoresEl = document.getElementById('best-scores');
+    if (bestScoresEl) {
+      bestScoresEl.innerHTML = '';
+    }
   }
 
   async function startGame(min, max, mode, difficulty) {
